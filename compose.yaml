@@ -1,0 +1,76 @@
+name: myflightbook
+
+services:
+  mysql:
+    image: mysql:8.0.46
+    container_name: mfb-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-logbook}
+      MYSQL_USER: ${MYSQL_USER:-mfb}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-mfb-local-password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-mfb-local-root-password}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d:ro
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+      - ./MyFlightbook.Web/Support:/mfb/support:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  db-smoke:
+    image: mysql:8.0.46
+    profiles: ["test"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-logbook}
+      MYSQL_USER: ${MYSQL_USER:-mfb}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-mfb-local-password}
+    volumes:
+      - ./docker/db-smoke/smoke.sh:/smoke.sh:ro
+    entrypoint: ["/bin/sh", "/smoke.sh"]
+
+  modern-web:
+    build:
+      context: .
+      dockerfile: MyFlightbook.Web.Core/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__logbookConnectionString: "server=mysql;port=3306;User Id=${MYSQL_USER:-mfb};password=${MYSQL_PASSWORD:-mfb-local-password};database=${MYSQL_DATABASE:-logbook};CharSet=utf8mb4;Pooling=false"
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    volumes:
+      - media-data:/app/images
+
+  test-runner:
+    build:
+      context: ./docker/test-runner
+    profiles: ["test"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__logbookConnectionString: "server=mysql;port=3306;User Id=${MYSQL_USER:-mfb};password=${MYSQL_PASSWORD:-mfb-local-password};database=${MYSQL_DATABASE:-logbook};CharSet=utf8mb4;Pooling=false"
+    volumes:
+      - .:/src
+      - nuget-cache:/root/.nuget/packages
+    working_dir: /src
+    entrypoint: ["/bin/bash", "/src/docker/test-runner/run-tests.sh"]
+
+volumes:
+  mysql-data:
+  nuget-cache:
+  media-data:

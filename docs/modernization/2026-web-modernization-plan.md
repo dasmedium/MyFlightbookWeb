@@ -1,6 +1,6 @@
 # MyFlightbook Web Modernization Plan
 
-**Status:** Draft / proposed — not yet executed
+**Status:** Draft / proposed — Phase 0 in progress (Docker harness and minimal .NET 10 host added)
 **Date:** 2026-11-01
 **Scope:** `MyFlightbookWeb` (backend + website + mobile API). The iOS app is treated as a compatibility constraint.
 **Related repo:** `../MyFlightbookiOS`
@@ -230,6 +230,7 @@ Before production cutover, Phase 0-4 must demonstrate:
 - Catalog the **27 MVC controllers**, ASMX methods, OAuth endpoints/scopes, DB tables, export formats, and `localconfig` keys.
 - Capture the existing database schema, indexes, foreign keys, collations, external storage layout, and a sanitized production-like database fixture.
 - Define record-level reconciliation checks for users, flights, aircraft, custom properties, endorsements, telemetry, images, settings, IDs, and relationships.
+- Stand up the local Docker harness (MySQL plus containerized tests and smoke tests) so changes can be validated as they are made. See `docs/development/local-docker.md`.
 - Establish CI (GitHub Actions): test projects on Linux; web project build on a Windows runner.
 - Build **characterization tests** for critical aviation logic before touching it:
   - Flight-time totals, night/instrument time, PIC/SIC, approaches, cross-country
@@ -247,6 +248,10 @@ Before production cutover, Phase 0-4 must demonstrate:
 
 - Create the new ASP.NET Core host targeting .NET 10.
 - Reference the existing `netstandard2.0` libraries (multi-target where needed).
+- Initial `MyFlightbook.Web.Core` scaffold runs in Docker, exposes `/healthz`
+  and `/healthz/db`, and validates `DBHelper` connectivity against the existing
+  schema. `MyFlightbook.Data.IntegrationTests` covers the same path in CI/local
+  test runs.
 - Replace `Global.asax.cs` startup with DI/`Program.cs`; add config/env, Serilog, static files, routing, error handling, anti-forgery.
 - Implement cookie auth + membership adapter over the existing tables/hash format without changing the existing user data schema.
 - Add a reverse proxy in front (YARP or infrastructure layer); move a small set of low-risk public/read-only pages to Core.
@@ -372,6 +377,8 @@ Recommended stance: **contributor-ready but solo-operated.**
 | 2026-11-07 | Existing MySQL schema/data are a release-blocking compatibility contract | Users must not need to convert or re-import current data to use the modernized application |
 | 2026-11-07 | Preserve and import legacy logbook exports | Users must be able to restore logs from old-application exports without editing or conversion |
 | 2026-11-07 | Existing calculations and functionality are parity requirements | Modernization must not alter aviation or regulation-dependent behavior |
+| 2026-11-09 | Local development uses Docker MySQL plus containerized tests; legacy site runs on Windows/IIS | Enables ongoing validation without changing the legacy runtime or schema |
+| 2026-11-09 | Minimal .NET 10 host runs in Docker and validates `DBHelper` against the existing schema | Proves the modern runtime can use the unchanged database before UI migration |
 
 ---
 

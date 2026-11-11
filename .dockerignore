@@ -1,0 +1,10 @@
+.git
+.gitignore
+**/bin
+**/obj
+**/TestResults
+/docs
+/MyFlightbook.Web
+/local
+*.dump
+*.sql.gz

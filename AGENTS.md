@@ -32,6 +32,29 @@ dotnet test MyFlightbook.FlightDeckScan.Tests/MyFlightbook.FlightDeckScan.Tests.
 
 Create `MyFlightbook.Web/App_Data/connection.config` and `email.config`; import `MyFlightbook.Web/Support/MinimalDB-*.sql`; populate `localconfig`.
 
+## Local Docker development
+
+The local harness provides MySQL initialized from the existing schema plus
+containerized test runners. See `docs/development/local-docker.md`.
+
+```bash
+cp .env.example .env
+docker compose up -d mysql
+docker compose --profile test run --rm db-smoke
+docker compose up -d --build modern-web
+curl http://localhost:8080/healthz
+curl http://localhost:8080/healthz/db
+docker compose --profile test run --rm test-runner
+```
+
+- `MyFlightbook.Web.Core` is the .NET 10 host scaffold; it exposes `/healthz`
+  and `/healthz/db` and is not the migrated UI yet.
+- The legacy .NET Framework 4.8 site runs on Windows/IIS or IIS Express and
+  connects to the Docker MySQL instance.
+- Do not change the shared schema to accommodate the modern host.
+- Reset the disposable local database with `docker compose down -v`.
+- Never commit `.env`, production dumps, or user media.
+
 ## Conventions and guardrails
 
 - **No secrets in source.** Keys belong in `localconfig` or the gitignored config files. Never commit connection strings, API keys, or certificates.

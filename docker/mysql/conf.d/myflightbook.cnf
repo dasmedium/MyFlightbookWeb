@@ -1,0 +1,10 @@
+[mysqld]
+# The dump and legacy code assume case-insensitive table names.
+lower_case_table_names=1
+max_allowed_packet=16M
+group_concat_max_len=2048
+character-set-server=utf8mb4
+collation-server=utf8mb4_general_ci
+# Keep the production-like strictness while allowing the legacy data set's
+# occasional invalid dates to import unchanged.
+sql_mode=ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION,ALLOW_INVALID_DATES

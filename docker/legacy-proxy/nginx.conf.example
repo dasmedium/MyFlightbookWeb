@@ -1,0 +1,26 @@
+# Optional local reverse-proxy example for running the legacy Windows site and
+# the modern host behind one origin. This file is not wired into compose.
+#
+# Replace LEGACY_HOST and LEGACY_PORT with the IIS/IIS Express address. If the
+# legacy site uses a development HTTPS certificate, set proxy_ssl_verify off.
+#
+# Example use: mount this file at /etc/nginx/conf.d/default.conf in an nginx
+# container that can resolve modern-web and reach the Windows host.
+
+server {
+    listen 80;
+
+    location /logbook/ {
+        proxy_pass http://LEGACY_HOST:LEGACY_PORT;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://modern-web:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

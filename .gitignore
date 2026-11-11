@@ -422,3 +422,9 @@ MigrationBackup/
 .idea/
 MyFlightbook.Web/ILLink/ILLink.Descriptors.LibraryBuild.xml
 MyFlightbook.Web/Directory.Build.targets
+
+# Local Docker development
+.env
+local/
+*.dump
+*.sql.gz
